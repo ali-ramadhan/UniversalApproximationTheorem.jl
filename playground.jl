@@ -1,6 +1,7 @@
 using Statistics
 using Printf
 using Flux
+using Plots
 
 # Flux uses Float32 by default so let's just use that!
 const FT = Float32
@@ -33,6 +34,25 @@ function learn_scalar_function!(NN, f; N, domain, epochs, optimizers=[ADAM()])
     return NN
 end
 
+function test_learned_mapping(f, NN; N, domain)
+    xs, ys_truth = generate_training_data(f; N, domain)
+    ys_NN = [NN([x])[1] for x in xs]
+
+    kwargs = (linewidth=3, linealpha=0.8, xlims=extrema(xs),
+              grid=false, legend=:bottomright, framestyle=:box,
+              foreground_color_legend=nothing, background_color_legend=nothing)
+
+    fit_plot = plot(xs, ys_truth, label="truth", title="Fit", xlabel="x", ylabel="y"; kwargs...)
+    plot!(fit_plot, xs, ys_NN, label="neural network"; kwargs...)
+
+    loss = @. abs(ys_NN - ys_truth) / abs(ys_truth)
+    ylims = (10^floor(log10(minimum(loss))), 10^ceil(log10(maximum(loss))))
+    loss_plot = plot(xs, loss, label="", title="extrapolation accuracy", xlabel="x", ylabel="|y′ - y| / y", yaxis=:log, ylims=ylims; kwargs...)
+
+    return plot(fit_plot, loss_plot, layout=(2, 1))
+end
+
 linear(x) = x
 NN = generate_neural_network(layers=1)
 learn_scalar_function!(NN, linear, N=10, domain=(-1, 1), epochs=20, optimizers=[Descent()])
+test_learned_mapping(linear, NN, N=100, domain=(-100, 100))
