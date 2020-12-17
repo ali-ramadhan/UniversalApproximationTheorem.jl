@@ -11,8 +11,8 @@ function generate_training_data(f; N, domain)
     return @. FT(x), FT(f(x))
 end
 
-function generate_neural_network(; layers, activation=identity)
-    return Chain([Dense(1, 1, activation) for _ in 1:layers]...)
+function generate_neural_network(; layers, nodes=1, activation=identity)
+    return Chain([Dense(l == 1 ? 1 : nodes, l == layers ? 1 : nodes, activation) for l in 1:layers]...)
 end
 
 function learn_scalar_function!(NN, f; N, domain, epochs, optimizers=[ADAM()])
@@ -56,3 +56,8 @@ linear(x) = x
 NN = generate_neural_network(layers=1)
 learn_scalar_function!(NN, linear, N=10, domain=(-1, 1), epochs=20, optimizers=[Descent()])
 test_learned_mapping(linear, NN, N=100, domain=(-100, 100))
+
+quadratic(x) = x^2
+NN = generate_neural_network(layers=20, nodes=20)
+learn_scalar_function!(NN, quadratic, N=10, domain=(0, 1), epochs=10, optimizers=[ADAM()])
+test_learned_mapping(quadratic, NN, N=100, domain=(0, 2))
